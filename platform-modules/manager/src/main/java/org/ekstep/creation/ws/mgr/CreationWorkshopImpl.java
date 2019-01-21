@@ -11,7 +11,7 @@ import java.util.Map;
 @Component
 public class CreationWorkshopImpl extends BaseManager {
 
-    private static String REGISTRY_URL = "http://localhost:8080/read-dev"
+    private static String REGISTRY_URL = "http://localhost:8080/read-dev";
 
     public Response login(String id) throws Exception{
         Response resp = null;
