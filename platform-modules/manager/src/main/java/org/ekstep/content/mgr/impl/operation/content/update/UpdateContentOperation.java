@@ -1,6 +1,7 @@
 package org.ekstep.content.mgr.impl.operation.content.update;
 
 import org.apache.commons.lang3.StringUtils;
+import org.ekstep.common.Platform;
 import org.ekstep.common.dto.Response;
 import org.ekstep.common.exception.ResponseCode;
 import org.ekstep.common.mgr.ConvertToGraphNode;
@@ -29,6 +30,12 @@ public class UpdateContentOperation extends BaseContentManager {
         if (map.containsKey("dialcodes")) {
             map.remove("dialcodes");
         }
+
+        //Added passport key to skip versionKey.
+        String passportKey = Platform.config.getString("graph.passport.key.base");
+        map.put("versionKey", passportKey);
+
+
         DefinitionDTO definition = getDefinition(TAXONOMY_ID, CONTENT_OBJECT_TYPE);
         restrictProps(definition, map, "status", "framework");
 
