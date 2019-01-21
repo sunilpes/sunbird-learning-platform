@@ -12,6 +12,7 @@ import java.util.Map;
 public class CreationWorkshopImpl extends BaseManager {
 
     private static String REGISTRY_URL = "http://localhost:8080/read-dev";
+    private static String ML_URL = "http://localhost:8080/ml";
 
     public Response login(String id) throws Exception{
         Response resp = null;
@@ -41,6 +42,17 @@ public class CreationWorkshopImpl extends BaseManager {
 
     public Response generate(Map<String, Object> map, String type){
         Response resp = null;
+        return resp;
+    }
+
+    public Response generateQB(Map<String, Object> map){
+        Response resp = null;
+        Map<String,String> headerParam = new HashMap<String,String>();
+        try{
+            resp = HttpRestUtil.makePostRequest(ML_URL, map, headerParam);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
         return resp;
     }
 

@@ -85,7 +85,23 @@ public class CreationWorkshopController extends BaseController {
             return getResponseEntity(response, apiId, null);
         } catch (Exception e) {
             TelemetryManager
-                    .error("Exception Occured while creating framework (Create Framework API): " + e.getMessage(), e);
+                    .error("Exception Occured while generating multimedia content: " + e.getMessage(), e);
+            return getExceptionResponseEntity(e, apiId, null);
+        }
+    }
+
+    @RequestMapping(value = "/generate/qb", method = RequestMethod.POST)
+    @ResponseBody
+    public ResponseEntity<Response> generateQB(@RequestBody Map<String, Object> requestMap) {
+        String apiId = "ekstep.devcon.generate.qb";
+        Request request = getRequest(requestMap);
+        try {
+            Map<String, Object> map = (Map<String, Object>) request.get("framework");
+            Response response = creationWorkshopImpl.generateQB(map);
+            return getResponseEntity(response, apiId, null);
+        } catch (Exception e) {
+            TelemetryManager
+                    .error("Exception Occured while calling generate question bank api: " + e.getMessage(), e);
             return getExceptionResponseEntity(e, apiId, null);
         }
     }
