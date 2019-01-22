@@ -161,11 +161,11 @@ public class ReviewFinalizer extends BaseFinalizer {
 
 									String extractedTextData = CurationUtil.getText(contentBody);
 									TelemetryManager.log("Extracted Text: "+extractedTextData);
+
 									System.out.println("Extracted Text: "+extractedTextData);
 
 									//check profanity
 									List<String> badWords = CurationUtil.checkProfanity(extractedTextData);
-
 
 									if(!badWords.isEmpty()){
 										String profanityCheckError ="Objectionable Words Found in Content :"+badWords;
@@ -173,8 +173,6 @@ public class ReviewFinalizer extends BaseFinalizer {
 									}
 
 									//TODO: Get Suggested Keywords and Perform Content Update together
-
-
 
 									//update the curation status
 									newNode.getMetadata().put("versionKey",passportKey);
