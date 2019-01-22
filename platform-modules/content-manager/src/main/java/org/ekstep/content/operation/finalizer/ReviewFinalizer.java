@@ -151,16 +151,16 @@ public class ReviewFinalizer extends BaseFinalizer {
 								newNode.getMetadata().put("curationStatus","Processing");
 								Response updateResponse = updateContentNode(contentId, newNode, null);
 								if(!checkError(updateResponse)){
-									TelemetryManager.log("Auto Curation is Started Now for Content : "+identifier);
+									TelemetryManager.info("Auto Curation is Started Now for Content : "+identifier);
 									System.out.println("Starting Auto Curation for Content Id : "+identifier);
 
 									// code to do auto curation
 									String contentBody = getContentBody(identifier);
-									TelemetryManager.log("original contentBody :"+contentBody);
+									TelemetryManager.info("original contentBody :"+contentBody);
 									System.out.println("original contentBody:::::::"+contentBody);
 
 									String extractedTextData = getText(contentBody);
-									TelemetryManager.log("Extracted Text: "+extractedTextData);
+									TelemetryManager.info("Extracted Text: "+extractedTextData);
 									System.out.println("Extracted Text: "+extractedTextData);
 
 								}
