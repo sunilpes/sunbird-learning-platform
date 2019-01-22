@@ -61,4 +61,9 @@ public class CreationWorkshopImpl extends BaseManager {
         return resp;
     }
 
+    public Response search(Map<String, Object> map){
+        Response resp = null;
+        return resp;
+    }
+
 }

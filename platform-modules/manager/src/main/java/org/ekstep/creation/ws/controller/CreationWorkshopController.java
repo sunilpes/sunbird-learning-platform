@@ -80,8 +80,7 @@ public class CreationWorkshopController extends BaseController {
         String apiId = "ekstep.devcon.generate.multimedia."+type;
         Request request = getRequest(requestMap);
         try {
-            Map<String, Object> map = (Map<String, Object>) request.get("framework");
-            Response response = creationWorkshopImpl.generate(map, type);
+            Response response = creationWorkshopImpl.generate(requestMap, type);
             return getResponseEntity(response, apiId, null);
         } catch (Exception e) {
             TelemetryManager
@@ -96,12 +95,26 @@ public class CreationWorkshopController extends BaseController {
         String apiId = "ekstep.devcon.generate.qb";
         Request request = getRequest(requestMap);
         try {
-            Map<String, Object> map = (Map<String, Object>) request.get("framework");
-            Response response = creationWorkshopImpl.generateQB(map);
+            Response response = creationWorkshopImpl.generateQB(requestMap);
             return getResponseEntity(response, apiId, null);
         } catch (Exception e) {
             TelemetryManager
                     .error("Exception Occured while calling generate question bank api: " + e.getMessage(), e);
+            return getExceptionResponseEntity(e, apiId, null);
+        }
+    }
+
+    @RequestMapping(value = "/search/table", method = RequestMethod.POST)
+    @ResponseBody
+    public ResponseEntity<Response> search(@RequestBody Map<String, Object> requestMap) {
+        String apiId = "ekstep.devcon.search.table";
+        Request request = getRequest(requestMap);
+        try {
+            Response response = creationWorkshopImpl.search(requestMap);
+            return getResponseEntity(response, apiId, null);
+        } catch (Exception e) {
+            TelemetryManager
+                    .error("Exception Occured while calling search api: " + e.getMessage(), e);
             return getExceptionResponseEntity(e, apiId, null);
         }
     }
