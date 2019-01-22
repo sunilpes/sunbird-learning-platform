@@ -20,16 +20,16 @@ public class CreationWorkshopController extends BaseController {
     @Autowired
     private CreationWorkshopImpl creationWorkshopImpl;
 
-    @RequestMapping(value = "/login/{id:.+}", method = RequestMethod.GET)
+    @RequestMapping(value = "/login", method = RequestMethod.POST)
     @ResponseBody
-    public ResponseEntity<Response> login(@PathVariable(value = "id") String visitorId)
+    public ResponseEntity<Response> login(@RequestBody Map<String, Object> requestMap)
     {
         String apiId = "ekstep.devcon.login";
         Response response;
         try {
             TelemetryManager.log(
-                    "Calling the Manager for fetching visitor details : [" + visitorId + "]" );
-            response = creationWorkshopImpl.login(visitorId);
+                    "Calling the Manager for fetching visitor details : [" + requestMap.get("code") + "]" );
+            response = creationWorkshopImpl.login(requestMap);
             return getResponseEntity(response, apiId, null);
         } catch (Exception e) {
             TelemetryManager.error("Exception: " + e.getMessage(), e);

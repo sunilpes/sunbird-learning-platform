@@ -14,8 +14,13 @@ public class CreationWorkshopImpl extends BaseManager {
     private static String REGISTRY_URL = "http://localhost:8080/read-dev";
     private static String ML_URL = "http://localhost:8080/ml";
 
-    public Response login(String id) throws Exception{
+    public Response login(Map<String, Object> reqMap) throws Exception{
         Response resp = null;
+        try{
+            resp = HttpRestUtil.makePostRequest(REGISTRY_URL, reqMap, new HashMap<String,String>());
+        }catch(Exception e){
+            e.printStackTrace();
+        }
         return resp;
     }
 
