@@ -17,6 +17,7 @@ import org.ekstep.common.dto.ResponseParams;
 import org.ekstep.common.dto.ResponseParams.StatusType;
 import org.ekstep.common.exception.ClientException;
 import org.ekstep.common.exception.ServerException;
+import org.ekstep.common.util.CurationUtil;
 import org.ekstep.content.common.ContentErrorMessageConstants;
 import org.ekstep.content.enums.ContentErrorCodeConstants;
 import org.ekstep.content.enums.ContentWorkflowPipelineParams;
@@ -154,15 +155,32 @@ public class ReviewFinalizer extends BaseFinalizer {
 									TelemetryManager.log("Auto Curation is Started Now for Content : "+identifier);
 									System.out.println("Starting Auto Curation for Content Id : "+identifier);
 
-									// code to do auto curation
 									String contentBody = getContentBody(identifier);
 									TelemetryManager.log("original contentBody :"+contentBody);
 									System.out.println("original contentBody:::::::"+contentBody);
 
-									String extractedTextData = getText(contentBody);
+									String extractedTextData = CurationUtil.getText(contentBody);
 									TelemetryManager.log("Extracted Text: "+extractedTextData);
 									System.out.println("Extracted Text: "+extractedTextData);
 
+									//check profanity
+									List<String> badWords = CurationUtil.checkProfanity(extractedTextData);
+
+
+									if(!badWords.isEmpty()){
+										String profanityCheckError ="Objectionable Words Found in Content :"+badWords;
+										newNode.getMetadata().put("profanityCheckError",profanityCheckError);
+									}
+
+									//TODO: Get Suggested Keywords and Perform Content Update together
+
+
+
+									//update the curation status
+									newNode.getMetadata().put("versionKey",passportKey);
+									newNode.getMetadata().put("curationStatus","Finished");
+									Response curateResponse = updateContentNode(contentId, newNode, null);
+									TelemetryManager.log("Auto Curation is Completed for Content : "+identifier);
 								}
 
 							}
@@ -230,62 +248,6 @@ public class ReviewFinalizer extends BaseFinalizer {
 		edata.put("publish_type", publishType);
 		edata.put("contentType", metadata.get("contentType"));
 	}
+	
 
-
-	private  String getText (String ecarText) {
-		StringBuilder builder = new StringBuilder();
-		try {
-			Map<String, Object> map = mapper.readValue(ecarText, Map.class);
-			if (MapUtils.isNotEmpty(map)) {
-				if((Map<String,Object>)map.get("theme") != null) {
-					List<Map<String,Object>> stageList	=(List<Map<String,Object>>) ((Map<String,Object>)map.get("theme")).get("stage");
-					for (Map<String,Object> stageMap : stageList) {
-						Object textList = stageMap.get("org.ekstep.text");
-						if(textList != null && textList instanceof List) {
-							List<Map<String,Object>> textMap = (List<Map<String,Object>>)textList;
-							extractText(textMap, builder);
-						}
-						textList = stageMap.get("org.ekstep.richtext");
-						if(textList != null && textList instanceof List) {
-							List<Map<String,Object>> textMap = (List<Map<String,Object>>)textList;
-							extractText(textMap, builder);
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return builder.toString();
-	}
-
-
-	private  void extractText(List<Map<String, Object>> textMap, StringBuilder builder) {
-		if (CollectionUtils.isNotEmpty(textMap)) {
-			for (Map<String, Object> indText : textMap) {
-				Map<String, Object> tempMap = (Map<String, Object>) indText.get("config");
-				if (MapUtils.isNotEmpty(tempMap)) {
-					if (tempMap.get("__cdata") != null) {
-						String actualText = (String) tempMap.get("__cdata");
-						if (actualText != null) {
-							try {
-								Map<String, Object> map = mapper.readValue(actualText, Map.class);
-								if (MapUtils.isNotEmpty(map)) {
-									Object obj = map.get("text");
-									if (obj != null && obj instanceof String) {
-										builder.append(" "+(String) obj);
-									}
-								}
-							} catch (Exception e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-					}
-				}
-			}
-		}
-
-	}
 }
