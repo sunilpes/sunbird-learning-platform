@@ -1,8 +1,14 @@
 package org.ekstep.content.operation.finalizer;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ekstep.common.Platform;
@@ -17,6 +23,7 @@ import org.ekstep.content.enums.ContentWorkflowPipelineParams;
 import org.ekstep.graph.dac.model.Node;
 import org.ekstep.kafka.KafkaClient;
 import org.ekstep.learning.common.enums.ContentErrorCodes;
+import org.ekstep.learning.util.CloudStore;
 import org.ekstep.telemetry.logger.TelemetryManager;
 import org.ekstep.telemetry.util.LogTelemetryEventUtil;
 
@@ -36,6 +43,9 @@ public class ReviewFinalizer extends BaseFinalizer {
 	private static String pdataId = "org.ekstep.platform";
 	private static String pdataVersion = "1.0";
 	private static String action = "publish";
+
+	private static ObjectMapper mapper = new ObjectMapper();
+
 	
 	/**
 	 * Instantiates a new ReviewFinalizer and sets the base path and current
@@ -62,7 +72,7 @@ public class ReviewFinalizer extends BaseFinalizer {
 	/**
 	 * finalize()
 	 *
-	 * @param Map
+	 * @param parameterMap
 	 *            the parameterMap
 	 * 
 	 *            checks if Node, ecrfType,ecmlType exists in the parameterMap
@@ -121,6 +131,47 @@ public class ReviewFinalizer extends BaseFinalizer {
 			newNode.setMetadata(node.getMetadata());
 
 			response = updateContentNode(contentId, newNode, null);
+
+			if(checkError(response)){
+				String identifier = newNode.getIdentifier();
+				String mimeType= (String) newNode.getMetadata().get("mimeType");
+				String autoCurationEnabled = (String) newNode.getMetadata().get("autoCurationEnabled");
+				//Added passport key to skip versionKey.
+				String passportKey = Platform.config.getString("graph.passport.key.base");
+
+
+
+				if("application/vnd.ekstep.ecml-archive".equalsIgnoreCase(mimeType) && "yes".equalsIgnoreCase(autoCurationEnabled)){
+					ExecutorService pool = null;
+					try {
+						pool = Executors.newFixedThreadPool(1);
+						pool.execute(new Runnable() {
+							@Override
+							public void run() {
+								//update the curation status
+								newNode.getMetadata().put("versionKey",passportKey);
+								newNode.getMetadata().put("curationStatus","Processing");
+								Response updateResponse = updateContentNode(contentId, newNode, null);
+								if(checkError(updateResponse)){
+									System.out.println("Content Auto Curation is in progress");
+								}
+								System.out.println("Starting Auto Curation for Content Id : "+identifier);
+								// code to do auto curation
+								String contentBody = getContentBody(identifier);
+								System.out.println("original contentBody:::::::"+contentBody);
+
+								String extractedTextData = getText(contentBody);
+								System.out.println("Extracted Text: "+extractedTextData);
+							}
+						});
+					} catch (Exception e) {
+						TelemetryManager.error("Error while doing auto curation", e);
+					} finally {
+						if (null != pool)
+							pool.shutdown();
+					}
+				}
+			}
 		}
 		
 		return response;
@@ -175,5 +226,63 @@ public class ReviewFinalizer extends BaseFinalizer {
 		edata.put("metadata", instructionEventMetadata);
 		edata.put("publish_type", publishType);
 		edata.put("contentType", metadata.get("contentType"));
+	}
+
+
+	private  String getText (String ecarText) {
+		StringBuilder builder = new StringBuilder();
+		try {
+			Map<String, Object> map = mapper.readValue(ecarText, Map.class);
+			if (MapUtils.isNotEmpty(map)) {
+				if((Map<String,Object>)map.get("theme") != null) {
+					List<Map<String,Object>> stageList	=(List<Map<String,Object>>) ((Map<String,Object>)map.get("theme")).get("stage");
+					for (Map<String,Object> stageMap : stageList) {
+						Object textList = stageMap.get("org.ekstep.text");
+						if(textList != null && textList instanceof List) {
+							List<Map<String,Object>> textMap = (List<Map<String,Object>>)textList;
+							extractText(textMap, builder);
+						}
+						textList = stageMap.get("org.ekstep.richtext");
+						if(textList != null && textList instanceof List) {
+							List<Map<String,Object>> textMap = (List<Map<String,Object>>)textList;
+							extractText(textMap, builder);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return builder.toString();
+	}
+
+
+	private  void extractText(List<Map<String, Object>> textMap, StringBuilder builder) {
+		if (CollectionUtils.isNotEmpty(textMap)) {
+			for (Map<String, Object> indText : textMap) {
+				Map<String, Object> tempMap = (Map<String, Object>) indText.get("config");
+				if (MapUtils.isNotEmpty(tempMap)) {
+					if (tempMap.get("__cdata") != null) {
+						String actualText = (String) tempMap.get("__cdata");
+						if (actualText != null) {
+							try {
+								Map<String, Object> map = mapper.readValue(actualText, Map.class);
+								if (MapUtils.isNotEmpty(map)) {
+									Object obj = map.get("text");
+									if (obj != null && obj instanceof String) {
+										builder.append(" "+(String) obj);
+									}
+								}
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+			}
+		}
+
 	}
 }
