@@ -132,14 +132,12 @@ public class ReviewFinalizer extends BaseFinalizer {
 
 			response = updateContentNode(contentId, newNode, null);
 
-			if(checkError(response)){
+			if(!checkError(response)){
 				String identifier = newNode.getIdentifier();
 				String mimeType= (String) newNode.getMetadata().get("mimeType");
 				String autoCurationEnabled = (String) newNode.getMetadata().get("autoCurationEnabled");
 				//Added passport key to skip versionKey.
 				String passportKey = Platform.config.getString("graph.passport.key.base");
-
-
 
 				if("application/vnd.ekstep.ecml-archive".equalsIgnoreCase(mimeType) && "yes".equalsIgnoreCase(autoCurationEnabled)){
 					ExecutorService pool = null;
@@ -152,16 +150,21 @@ public class ReviewFinalizer extends BaseFinalizer {
 								newNode.getMetadata().put("versionKey",passportKey);
 								newNode.getMetadata().put("curationStatus","Processing");
 								Response updateResponse = updateContentNode(contentId, newNode, null);
-								if(checkError(updateResponse)){
-									System.out.println("Content Auto Curation is in progress");
-								}
-								System.out.println("Starting Auto Curation for Content Id : "+identifier);
-								// code to do auto curation
-								String contentBody = getContentBody(identifier);
-								System.out.println("original contentBody:::::::"+contentBody);
+								if(!checkError(updateResponse)){
+									TelemetryManager.log("Auto Curation is Started Now for Content : "+identifier);
+									System.out.println("Starting Auto Curation for Content Id : "+identifier);
 
-								String extractedTextData = getText(contentBody);
-								System.out.println("Extracted Text: "+extractedTextData);
+									// code to do auto curation
+									String contentBody = getContentBody(identifier);
+									TelemetryManager.log("original contentBody :"+contentBody);
+									System.out.println("original contentBody:::::::"+contentBody);
+
+									String extractedTextData = getText(contentBody);
+									TelemetryManager.log("Extracted Text: "+extractedTextData);
+									System.out.println("Extracted Text: "+extractedTextData);
+
+								}
+
 							}
 						});
 					} catch (Exception e) {
