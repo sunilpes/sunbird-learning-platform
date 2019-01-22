@@ -252,7 +252,7 @@ public abstract class CassandraStore {
 				commaSepValueBuilder.append(Constants.COMMA);
 			}
 		}
-		query.append(commaSepValueBuilder + ")" + Constants.IF_NOT_EXISTS);
+		query.append(commaSepValueBuilder + ")" );
 		return query.toString();
 
 	}
