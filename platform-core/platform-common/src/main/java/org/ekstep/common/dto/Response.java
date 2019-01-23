@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.ekstep.common.exception.ResponseCode;
 
 /**
@@ -11,6 +12,7 @@ import org.ekstep.common.exception.ResponseCode;
  * @author rayulu
  * 
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Response implements Serializable {
 
     private static final long serialVersionUID = -3773253896160786443L;

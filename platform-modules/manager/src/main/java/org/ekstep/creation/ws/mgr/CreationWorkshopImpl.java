@@ -40,7 +40,8 @@ public class CreationWorkshopImpl extends BaseManager {
         Map<String, Object> data = new HashMap<String, Object>();
         Map<String, String> headerParam = new HashMap<String, String>();
         data.put("code", id);
-        map.put("request", map);
+        map.put("id","open-saber.registry.read");
+        map.put("request", data);
         try {
             if(null!=id && id.toLowerCase().startsWith("vis"))
             resp = HttpRestUtil.makePostRequest(REGISTRY_VIS_URL, map, headerParam);
@@ -66,7 +67,7 @@ public class CreationWorkshopImpl extends BaseManager {
         Response resp = null;
         Map<String, String> headerParam = new HashMap<String, String>();
         try {
-            resp = HttpRestUtil.makePostRequest(ML_URL, map, headerParam);
+            resp = HttpRestUtil.makeDSPostRequest(ML_URL, map, headerParam);
         } catch (Exception e) {
             e.printStackTrace();
         }
