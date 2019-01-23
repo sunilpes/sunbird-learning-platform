@@ -4,6 +4,9 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.vision.v1.Vision;
+import com.google.api.services.vision.v1.VisionScopes;
+import com.google.api.services.vision.v1.model.*;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -17,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 public class VisionUtil {
-        /*
 
     private static final String APPLICATION_NAME = "Google-VisionSample/1.0";
 
@@ -130,6 +132,6 @@ public class VisionUtil {
 
     }
 
-*/
+
 
 }

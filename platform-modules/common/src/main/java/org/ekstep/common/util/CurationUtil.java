@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ekstep.common.dto.Response;
 import org.ekstep.telemetry.logger.TelemetryManager;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,10 +17,15 @@ public class CurationUtil {
     private static String tagMeApiUrlPrefix = "https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=1e1f2881-62ec-4b3e-9036-9efe89347991-843339462&text=";
     private static String tagMeApiUrlSuffix = "&include_abstarction=True&epsilon=0.6";
 
+   private static  Map<String, Object> labels = new HashMap<String, Object>();
+    //private static  List<String> flags = new ArrayList<String>();
+
+    private static  List<Map<String,Object>> flagMapList = new ArrayList<>();
+
     public static List<String> checkProfanity(String str){
         List<String> result = new ArrayList<>();
         Set<String> wordSet = getListFromString(str);
-        result = wordSet.stream().filter(originalWord -> badWords.contains(originalWord)).collect(Collectors.toList());
+        result = wordSet.parallelStream().filter(originalWord -> badWords.contains(originalWord)).collect(Collectors.toList());
         return result;
     }
 
@@ -154,5 +160,40 @@ public class CurationUtil {
             e.printStackTrace();
         }
         return mediaList;
+    }
+
+    public static List<Map<String,Object>> validateImages(String bodyText){
+       Map<String,String> urls = getImageUrls(bodyText);
+
+       for(String assetId : urls.keySet()){
+           // download image and validate
+           String url = "https://dev.ekstep.in"+urls.get(assetId);
+           File file = HttpDownloadUtility.downloadFile(url, "/data/contentBundle/");
+           if(null!=file){
+               TelemetryManager.log("Calling Vision api for asset [ "+assetId+" ], url = "+url);
+               callVisionApi(assetId,file);
+           }
+       }
+        return flagMapList;
+    }
+
+    public static void callVisionApi(String identifier , File file){
+        try{
+            // Get Vision Service
+            VisionUtil vision = new VisionUtil(VisionUtil.getVisionService());
+            labels = vision.getTags(file, vision);
+            List<String> flags = vision.getFlags(file, vision);
+            if(!flags.isEmpty()){
+                TelemetryManager.log("objectional content found for asset id [" + identifier +"] , flags = "+flags);
+                Map<String,Object> dMap = new HashMap<String,Object>(){{
+                    put("identifier",identifier);
+                    put("flags",flags);
+                }};
+                flagMapList.add(dMap);
+            }
+        }catch(Exception e){
+            TelemetryManager.log("Exception Occured while calling vision api..."+e);
+            e.printStackTrace();
+        }
     }
 }
