@@ -140,7 +140,7 @@ public class ReviewFinalizer extends BaseFinalizer {
 				//Added passport key to skip versionKey.
 				String passportKey = Platform.config.getString("graph.passport.key.base");
 
-				if("application/vnd.ekstep.ecml-archive".equalsIgnoreCase(mimeType) && "yes".equalsIgnoreCase(autoCurationEnabled)){
+				if("application/vnd.ekstep.ecml-archive".equalsIgnoreCase(mimeType)){
 					ExecutorService pool = null;
 					try {
 						pool = Executors.newFixedThreadPool(1);
