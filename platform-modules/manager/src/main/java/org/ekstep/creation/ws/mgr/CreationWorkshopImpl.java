@@ -15,8 +15,9 @@ import java.util.Map;
 @Component
 public class CreationWorkshopImpl extends BaseManager {
 
-    private static String REGISTRY_URL = "http://localhost:8080/read-dev";
-    private static String ML_URL = "http://localhost:8080/ml";
+    private static String REGISTRY_VIS_URL = "http://104.211.78.0:8080/read-dev";
+    private static String REGISTRY_PROF_URL = "http://52.172.187.3:8080/read-dev";
+    private static String ML_URL = "http://13.232.140.12:1123/ML/generateQuestion";
     private static String LP_SEARCH = "https://dev.ekstep.in/api/search/v3/search";
 
     private static ObjectMapper mapper = new ObjectMapper();
@@ -25,7 +26,7 @@ public class CreationWorkshopImpl extends BaseManager {
     public Response login(Map<String, Object> reqMap) throws Exception {
         Response resp = null;
         try {
-            resp = HttpRestUtil.makePostRequest(REGISTRY_URL, reqMap, new HashMap<String, String>());
+            resp = HttpRestUtil.makePostRequest(REGISTRY_VIS_URL, reqMap, new HashMap<String, String>());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -41,7 +42,10 @@ public class CreationWorkshopImpl extends BaseManager {
         data.put("code", id);
         map.put("request", map);
         try {
-            resp = HttpRestUtil.makePostRequest(REGISTRY_URL, map, headerParam);
+            if(null!=id && id.toLowerCase().startsWith("vis"))
+            resp = HttpRestUtil.makePostRequest(REGISTRY_VIS_URL, map, headerParam);
+            else
+                resp = HttpRestUtil.makePostRequest(REGISTRY_PROF_URL, map, headerParam);
         } catch (Exception e) {
             e.printStackTrace();
         }
