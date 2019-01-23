@@ -61,11 +61,7 @@ public class HttpRestUtil {
 
 		if (null == requestMap)
 			throw new ServerException("ERR_INVALID_REQUEST_BODY", "Request Body is Manadatory");
-		System.out.println("makePostRequest ::::::: ");
-		System.out.println("uri : "+uri);
-		System.out.println("headerParam : "+headerParam);
-		System.out.println("requestMap : "+requestMap);
-		System.out.println("json req : "+gsonObj.toJson(requestMap).toString());
+
 		try {
 			response = Unirest.post(uri).headers(headerParam)
 					.body(gsonObj.toJson(requestMap)).asString();

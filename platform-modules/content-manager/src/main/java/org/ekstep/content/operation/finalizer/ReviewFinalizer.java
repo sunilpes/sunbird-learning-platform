@@ -151,40 +151,43 @@ public class ReviewFinalizer extends BaseFinalizer {
 							@Override
 							public void run() {
 								//update the curation status
-								newNode.getMetadata().put("versionKey",passportKey);
-								newNode.getMetadata().put("curationStatus","Processing");
+								newNode.getMetadata().put("versionKey", passportKey);
+								newNode.getMetadata().put("curationStatus", "Processing");
 								Response updateResponse = updateContentNode(contentId, newNode, null);
-								if(!checkError(updateResponse)){
-									TelemetryManager.log("Auto Curation is Started Now for Content : "+identifier);
-									System.out.println("Starting Auto Curation for Content Id : "+identifier);
+								if (!checkError(updateResponse)) {
+									TelemetryManager.log("Auto Curation is Started Now for Content : " + identifier);
+									System.out.println("Starting Auto Curation for Content Id : " + identifier);
 
 									String contentBody = getContentBody(identifier);
-									TelemetryManager.log("original contentBody :"+contentBody);
-									System.out.println("original contentBody:::::::"+contentBody);
+									if (StringUtils.isNotBlank(contentBody)) {
+										TelemetryManager.log("original contentBody :" + contentBody);
+										System.out.println("original contentBody:::::::" + contentBody);
 
-									String extractedTextData = CurationUtil.getText(contentBody);
-									TelemetryManager.log("Extracted Text: "+extractedTextData);
+										String extractedTextData = CurationUtil.getText(contentBody);
+										TelemetryManager.log("Extracted Text: " + extractedTextData);
 
-									System.out.println("Extracted Text: "+extractedTextData);
+										System.out.println("Extracted Text: " + extractedTextData);
 
-									//check profanity
-									List<String> badWords = CurationUtil.checkProfanity(extractedTextData);
+										if (StringUtils.isNotBlank(extractedTextData)) {
+											//check profanity
+											List<String> badWords = CurationUtil.checkProfanity(extractedTextData);
 
-									if(!badWords.isEmpty()){
-										String profanityCheckError =""+badWords;
-										newNode.getMetadata().put("profanityCheckError",profanityCheckError);
-									}
+											if (!badWords.isEmpty()) {
+												String profanityCheckError = "" + badWords;
+												newNode.getMetadata().put("profanityCheckError", profanityCheckError);
+											}
 
+										}
 
-									//validate images.
-									List<Map<String,Object>> imageCurationList = CurationUtil.validateImages(extractedTextData);
-									if(null!=imageCurationList && !imageCurationList.isEmpty()){
-										System.out.println("imageCurationList:::::"+imageCurationList);
-										newNode.getMetadata().put("imageCurationError",imageCurationList);
-									}
+										//validate images.
+										List<Map<String, Object>> imageCurationList = CurationUtil.validateImages(contentBody);
+										if (null != imageCurationList && !imageCurationList.isEmpty()) {
+											System.out.println("imageCurationList:::::" + imageCurationList);
+											newNode.getMetadata().put("imageCurationError", imageCurationList);
+										}
 
-									// get all images
-									// commented as image tagging is not having vision api.
+										// get all images
+										// commented as image tagging is not having vision api.
 									/*Map<String,String> imageMap = CurationUtil.getImageUrls(extractedTextData);
 									Map<String,Object> failedAssetMap = new HashMap<>();
 									List<String> assetIds =  imageMap.keySet().stream().filter(key -> key.startsWith("do_")).collect(Collectors.toList());
@@ -212,22 +215,23 @@ public class ReviewFinalizer extends BaseFinalizer {
 										newNode.getMetadata().put("imageCurationError",failedAssetMap);
 									}*/
 
-									//TODO: Get Suggested Keywords and Perform Content Update together - No Need Now
-									//Commented because data science is going to do auto tagging.
+										//TODO: Get Suggested Keywords and Perform Content Update together - No Need Now
+										//Commented because data science is going to do auto tagging.
 									/*List<String> lpLeywords = new ArrayList<>(CurationUtil.getKeywords(extractedTextData));
 									if(!lpLeywords.isEmpty()){
 										TelemetryManager.log("LP Keywords from tagme api : "+lpLeywords);
 										newNode.getMetadata().put("LP_Keywords",lpLeywords);
 									}*/
 
-									//update the content
-									newNode.getMetadata().put("versionKey",passportKey);
-									//DS team will update the curationStatus as "Finished".
-									//newNode.getMetadata().put("curationStatus","Finished");
-									Response curateResponse = updateContentNode(contentId, newNode, null);
-									TelemetryManager.log("Auto Curation is Completed for Content in platform: "+identifier);
-								}
+										//update the content
+										newNode.getMetadata().put("versionKey", passportKey);
+										//DS team will update the curationStatus as "Finished".
+										//newNode.getMetadata().put("curationStatus","Finished");
+										Response curateResponse = updateContentNode(contentId, newNode, null);
+										TelemetryManager.log("Auto Curation is Completed for Content in platform: " + identifier);
+									}
 
+								}
 							}
 						});
 					} catch (Exception e) {
