@@ -48,10 +48,15 @@ public class CurationUtil {
 		return null;
 	}   
         
-    
+    /*public static void main(String args[]) {
+    		String a = "<p>Nelson Mandela was president of&nbsp;africa. He never used to be&nbsp;angry.</p>";
+    		System.out.println(getListFromString(a));
+    }*/
 
     public static Set<String> getListFromString(String str){
-    		str = str.replaceAll("[;\\/:*?\"<>|&']", " ");
+    		str = str.replaceAll("&nbsp;", " ");
+    		str = str.replaceAll("\\<.*?>"," ");
+    		str = str.replaceAll("[;\\/:*?\"<>|&'\\.]", " ");
     		return new HashSet(Arrays.asList(str.split(" ")));
     }
 
