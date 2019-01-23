@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ekstep.telemetry.logger.TelemetryManager;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CurationUtil {
 
@@ -16,36 +17,42 @@ public class CurationUtil {
 
     public static List<String> checkProfanity(String str){
         List<String> result = new ArrayList<>();
-        List<String> words = getListFromString(str);
-        for(String word:words){
-            if(badWords.contains(word))
-              result.add(word);
-        }
+        Set<String> wordSet = getListFromString(str);
+        result = wordSet.stream().filter(originalWord -> badWords.contains(originalWord)).collect(Collectors.toList());
         return result;
     }
 
-    public static List<String> getKeywords(String str){
-        List<String> result = new ArrayList<>();
-        List<String> words = getListFromString(str);
-        for(String word:words){
-            // TODO: Form a String of 600 words and prepare url and call api
-            String text = "";
-            try{
-                String url = tagMeApiUrlPrefix + text + tagMeApiUrlSuffix;
-                //TODO: tagme api response can't be casted to EkStep Response. Need to create another method in util.
-                HttpRestUtil.makeGetRequest(url, null, new HashMap<String, String>());
-                //filter spot and store it in the result
-            }catch(Exception e){
-                TelemetryManager.error("Error occured while getting kewords from tagme api ::::: " + e);
-                e.printStackTrace();
-            }
+    public static Set<String> getKeywords(String str) {
+    		Set<String> result = new HashSet<>();
+    		List<String> wordList = new ArrayList<>(getListFromString(str));
+        int size = wordList.size();
+        int start = 0;
+        int limit = 0;
+        while(limit<size) {
+        		start = limit;
+            limit = limit+500 >= size ? size : limit + 500;
+        		String splitedWords = String.join(" ", wordList.subList(start, limit));
+            result.addAll(makeTagCall(splitedWords));
         }
-
         return result;
     }
+    
+    public static Set<String> makeTagCall(String keyWords) {
+		try {
+			String url = tagMeApiUrlPrefix + keyWords + tagMeApiUrlSuffix;
+			HttpRestUtil.makeGetRequest(url, null, new HashMap<String, String>());
+		} catch (Exception e) {
+			TelemetryManager.error("Error occured while getting kewords from tagme api ::::: " + e);
+			e.printStackTrace();
+		}
+		return null;
+	}   
+        
+    
 
-    public static List<String> getListFromString(String str){
-        return Arrays.asList(str.split(""));
+    public static Set<String> getListFromString(String str){
+    		str = str.replaceAll("[;\\/:*?\"<>|&']", " ");
+    		return new HashSet(Arrays.asList(str.split(" ")));
     }
 
     public static  String getText (String ecarText) {
