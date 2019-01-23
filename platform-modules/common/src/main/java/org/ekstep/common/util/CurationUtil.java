@@ -39,7 +39,7 @@ public class CurationUtil {
         		start = limit;
             limit = limit+500 >= size ? size : limit + 500;
         		String splitedWords = String.join(" ", wordList.subList(start, limit));
-        		//TODO : Enable it after handling response.
+        		//TODO : Enable it if keywords are required
             //result.addAll(makeTagCall(splitedWords));
         }
         return result;
@@ -146,7 +146,7 @@ public class CurationUtil {
                                 for (Map<String, Object> mediaMap : mediaMapList) {
                                     Object mediaType = mediaMap.get("type");
                                     if (mediaType != null && "image".equalsIgnoreCase((String) mediaType)) {
-                                        //TODO: Check for public url / youtube url . Id should not be null in that case.
+                                        //TODO: Check for public url / youtube url . Id should not be null in that case. - it won't be null
                                         mediaList.put((String) mediaMap.get("id"), (String) mediaMap.get("src"));
                                     }
                                 }
@@ -174,7 +174,8 @@ public class CurationUtil {
                callVisionApi(assetId,file);
            }
        }
-        return flagMapList;
+       List<Map<String, Object>> list = flagMapList.stream().distinct().collect(Collectors.toList());
+         return list;
     }
 
     public static void callVisionApi(String identifier , File file){

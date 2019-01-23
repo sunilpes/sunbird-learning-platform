@@ -160,12 +160,11 @@ public class ReviewFinalizer extends BaseFinalizer {
 
 									String contentBody = getContentBody(identifier);
 									if (StringUtils.isNotBlank(contentBody)) {
-										TelemetryManager.log("original contentBody :" + contentBody);
-										System.out.println("original contentBody:::::::" + contentBody);
+										//TelemetryManager.log("original contentBody :" + contentBody);
+										//System.out.println("original contentBody:::::::" + contentBody);
 
 										String extractedTextData = CurationUtil.getText(contentBody);
 										TelemetryManager.log("Extracted Text: " + extractedTextData);
-
 										System.out.println("Extracted Text: " + extractedTextData);
 
 										if (StringUtils.isNotBlank(extractedTextData)) {
@@ -176,7 +175,6 @@ public class ReviewFinalizer extends BaseFinalizer {
 												String profanityCheckError = "" + badWords;
 												newNode.getMetadata().put("profanityCheckError", profanityCheckError);
 											}
-
 										}
 
 										//validate images.
@@ -225,10 +223,35 @@ public class ReviewFinalizer extends BaseFinalizer {
 
 										//update the content
 										newNode.getMetadata().put("versionKey", passportKey);
-										//DS team will update the curationStatus as "Finished".
-										//newNode.getMetadata().put("curationStatus","Finished");
+										newNode.getMetadata().put("curationStatus","Finished");
 										Response curateResponse = updateContentNode(contentId, newNode, null);
 										TelemetryManager.log("Auto Curation is Completed for Content in platform: " + identifier);
+
+										//Auto Publish
+										Response getNodeResponse = getDataNode("domain",identifier);
+										if (!checkError(getNodeResponse)) {
+											// Content Image Node is Available so assigning it as node
+											Node nodeObj  = (Node) getNodeResponse.get(GraphDACParams.node.name());
+											TelemetryManager.log(
+													"Getting Content Node for publish operation , content Id: " + nodeObj.getIdentifier());
+											Object profanityCheck = nodeObj.getMetadata().get("profanityCheckError");
+											Object imageCurationError = nodeObj.getMetadata().get("imageCurationError");
+
+											Boolean autoPublishEnabled = Platform.config.hasPath("auto.publish.enabled")? Platform.config.getBoolean("auto.publish.enabled"):true;
+
+											if(autoPublishEnabled){
+												if(null==profanityCheck && null==imageCurationError){
+													try {
+														pushInstructionEvent(nodeObj, ContentWorkflowPipelineParams.Public.name().toLowerCase());
+														TelemetryManager.log("Content: " + nodeObj.getIdentifier() + " pushed to kafka for publish operation.");
+													} catch (Exception e) {
+														throw new ServerException(ContentErrorCodes.ERR_CONTENT_PUBLISH.name(),
+																"Error occured during content publish", e);
+													}
+												}
+											}
+										}
+
 									}
 
 								}
