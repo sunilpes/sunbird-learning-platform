@@ -133,6 +133,38 @@ public class HttpRestUtil {
 		return getResponse(response);
 	}
 
+	public static Response callTagMeApi(String urlWithIdentifier, String queryParam, Map<String, String> headerParam)
+			throws Exception {
+		HttpResponse<String> response = null;
+		if (null == headerParam)
+			throw new ServerException("ERR_INVALID_HEADER_PARAM", "Header Parameter is Mandatory.");
+
+		String req = (null != queryParam) ? urlWithIdentifier + queryParam : urlWithIdentifier;
+		try {
+			response = Unirest.get(req).headers(headerParam).asString();
+		} catch (Exception e) {
+			throw new ServerException("ERR_CALL_API",
+					"Something Went Wrong While Making API Call | Error is: " + e.getMessage());
+		}
+
+		Response resp = getSuccessResponse();
+		String body = "";
+		Map<String,Object> result = null;
+		try {
+			body = response.getBody();
+			if (StringUtils.isNotBlank(body))
+				result = objMapper.readValue(body, new TypeReference<Map<String, Object>>() {
+				});
+		} catch (Exception  e) {
+			TelemetryManager.info("Exception:::::"+ e);
+		}
+
+		if(null!= result && !result.isEmpty())
+			resp.getResult().put("tags",result);
+
+		return resp;
+	}
+
 	private static Response getResponse(HttpResponse<String> response) {
 		String body = null;
 		Response resp = new Response();

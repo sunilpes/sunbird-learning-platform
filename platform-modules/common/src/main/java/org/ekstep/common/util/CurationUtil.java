@@ -1,6 +1,7 @@
 package org.ekstep.common.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ekstep.common.dto.Response;
 import org.ekstep.telemetry.logger.TelemetryManager;
 
 import java.util.*;
@@ -37,11 +38,15 @@ public class CurationUtil {
         }
         return result;
     }
-    
+
+    //TODO: Need to decide, whether getKeywords() should return map or set
     public static Set<String> makeTagCall(String keyWords) {
 		try {
 			String url = tagMeApiUrlPrefix + keyWords + tagMeApiUrlSuffix;
-			HttpRestUtil.makeGetRequest(url, null, new HashMap<String, String>());
+			Response resp = HttpRestUtil.callTagMeApi(url, null, new HashMap<String, String>());
+			Map<String,Object> result = resp.getResult();
+			List<Map<String,Object>> annotations = (List<Map<String, Object>>) result.get("annotations");
+
 		} catch (Exception e) {
 			TelemetryManager.error("Error occured while getting kewords from tagme api ::::: " + e);
 			e.printStackTrace();
