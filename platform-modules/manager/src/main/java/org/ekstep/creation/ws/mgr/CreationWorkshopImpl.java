@@ -20,7 +20,7 @@ public class CreationWorkshopImpl extends BaseManager {
 
     private static String REGISTRY_VIS_URL = "http://104.211.78.0:8080/read-dev";
     private static String REGISTRY_PROF_URL = "http://52.172.187.3:8080/read-dev";
-    private static String ML_URL = "http://13.232.140.12:1123/ML/generateQuestion";
+    private static String ML_URL = "http://13.233.247.239:1123/ML/generateQuestion";
     private static String LP_SEARCH = "https://dev.ekstep.in/api/search/v3/search";
 
     private static ObjectMapper mapper = new ObjectMapper();
