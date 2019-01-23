@@ -32,7 +32,8 @@ public class CurationUtil {
         		start = limit;
             limit = limit+500 >= size ? size : limit + 500;
         		String splitedWords = String.join(" ", wordList.subList(start, limit));
-            result.addAll(makeTagCall(splitedWords));
+        		//TODO : Enable it after handling response.
+            //result.addAll(makeTagCall(splitedWords));
         }
         return result;
     }

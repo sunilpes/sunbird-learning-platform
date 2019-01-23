@@ -1,10 +1,9 @@
 package org.ekstep.content.operation.finalizer;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.CollectionUtils;
@@ -21,10 +20,12 @@ import org.ekstep.common.util.CurationUtil;
 import org.ekstep.content.common.ContentErrorMessageConstants;
 import org.ekstep.content.enums.ContentErrorCodeConstants;
 import org.ekstep.content.enums.ContentWorkflowPipelineParams;
+import org.ekstep.graph.dac.enums.GraphDACParams;
 import org.ekstep.graph.dac.model.Node;
 import org.ekstep.kafka.KafkaClient;
 import org.ekstep.learning.common.enums.ContentErrorCodes;
 import org.ekstep.learning.util.CloudStore;
+import org.ekstep.learning.util.ControllerUtil;
 import org.ekstep.telemetry.logger.TelemetryManager;
 import org.ekstep.telemetry.util.LogTelemetryEventUtil;
 
@@ -46,6 +47,8 @@ public class ReviewFinalizer extends BaseFinalizer {
 	private static String action = "publish";
 
 	private static ObjectMapper mapper = new ObjectMapper();
+
+	private static ControllerUtil util = new ControllerUtil();
 
 	
 	/**
@@ -172,7 +175,40 @@ public class ReviewFinalizer extends BaseFinalizer {
 										newNode.getMetadata().put("profanityCheckError",profanityCheckError);
 									}
 
+									// get all images
+									Map<String,String> imageMap = CurationUtil.getImageUrls(extractedTextData);
+									Map<String,Object> failedAssetMap = new HashMap<>();
+									List<String> assetIds =  imageMap.keySet().stream().filter(key -> key.startsWith("do_")).collect(Collectors.toList());
+									Response getNodeResp = util.getDataNodes("domain",assetIds);
+
+									List<Node> nodes = null;
+									if(!checkError(getNodeResp)){
+										nodes = (List<Node>) response.getResult().get(GraphDACParams.node_list.name());
+									}
+
+									if(null!=nodes){
+										for(Node node:nodes){
+											String status = (String) node.getMetadata().get("status");
+											if(null!=status && "Flagged".equalsIgnoreCase(status)){
+												List<String> flags = (List<String>) node.getMetadata().get("flags");
+												if(null!=flags && !flags.isEmpty()){
+													failedAssetMap.put(node.getIdentifier(),flags);
+												}
+
+											}
+										}
+									}
+
+									if(null!=failedAssetMap && !failedAssetMap.isEmpty()){
+										newNode.getMetadata().put("imageCurationError",failedAssetMap);
+									}
+
 									//TODO: Get Suggested Keywords and Perform Content Update together
+									List<String> lpLeywords = new ArrayList<>(CurationUtil.getKeywords(extractedTextData));
+									if(!lpLeywords.isEmpty()){
+										TelemetryManager.log("LP Keywords from tagme api : "+lpLeywords);
+										newNode.getMetadata().put("LP_Keywords",lpLeywords);
+									}
 
 									//update the curation status
 									newNode.getMetadata().put("versionKey",passportKey);

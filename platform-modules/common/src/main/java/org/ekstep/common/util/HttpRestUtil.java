@@ -38,7 +38,8 @@ public class HttpRestUtil {
 		EKSTEP_API_AUTHORIZATION_KEY = "Bearer " + key;
 		Unirest.setDefaultHeader("Content-Type", DEFAULT_CONTENT_TYPE);
 		Unirest.setDefaultHeader("Authorization", EKSTEP_API_AUTHORIZATION_KEY);
-		Unirest.setDefaultHeader("user-id", EKSTEP_PLATFORM_API_USERID);
+		//Unirest.setDefaultHeader("user-id", EKSTEP_PLATFORM_API_USERID);
+		Unirest.setDefaultHeader("Accept","application/json");
 	}
 
 	/**
@@ -60,7 +61,11 @@ public class HttpRestUtil {
 
 		if (null == requestMap)
 			throw new ServerException("ERR_INVALID_REQUEST_BODY", "Request Body is Manadatory");
-
+		System.out.println("makePostRequest ::::::: ");
+		System.out.println("uri : "+uri);
+		System.out.println("headerParam : "+headerParam);
+		System.out.println("requestMap : "+requestMap);
+		System.out.println("json req : "+gsonObj.toJson(requestMap).toString());
 		try {
 			response = Unirest.post(uri).headers(headerParam)
 					.body(gsonObj.toJson(requestMap)).asString();
