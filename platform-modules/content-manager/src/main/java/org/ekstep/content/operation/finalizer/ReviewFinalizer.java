@@ -215,11 +215,13 @@ public class ReviewFinalizer extends BaseFinalizer {
 
 										//TODO: Get Suggested Keywords and Perform Content Update together - No Need Now
 										//Commented because data science is going to do auto tagging.
-									/*List<String> lpLeywords = new ArrayList<>(CurationUtil.getKeywords(extractedTextData));
+									List<String> lpLeywords = new ArrayList<>(CurationUtil.getKeywords(extractedTextData));
 									if(!lpLeywords.isEmpty()){
 										TelemetryManager.log("LP Keywords from tagme api : "+lpLeywords);
 										newNode.getMetadata().put("LP_Keywords",lpLeywords);
-									}*/
+									}
+
+
 
 										//update the content
 										newNode.getMetadata().put("versionKey", passportKey);

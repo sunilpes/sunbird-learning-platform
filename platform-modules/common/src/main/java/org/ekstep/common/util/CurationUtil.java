@@ -17,7 +17,7 @@ public class CurationUtil {
     private static String tagMeApiUrlPrefix = "https://tagme.d4science.org/tagme/tag?lang=en&gcube-token=1e1f2881-62ec-4b3e-9036-9efe89347991-843339462&text=";
     private static String tagMeApiUrlSuffix = "&include_abstarction=True&epsilon=0.6";
 
-   private static  Map<String, Object> labels = new HashMap<String, Object>();
+   //private static  Map<String, Object> labels = new HashMap<String, Object>();
     //private static  List<String> flags = new ArrayList<String>();
 
     private static  List<Map<String,Object>> flagMapList = new ArrayList<>();
@@ -38,9 +38,9 @@ public class CurationUtil {
         while(limit<size) {
         		start = limit;
             limit = limit+500 >= size ? size : limit + 500;
-        		String splitedWords = String.join(" ", wordList.subList(start, limit));
+        		String splitedWords = String.join("_", wordList.subList(start, limit));
         		//TODO : Enable it if keywords are required
-            //result.addAll(makeTagCall(splitedWords));
+            result.addAll(makeTagCall(splitedWords));
         }
         return result;
     }
@@ -182,13 +182,15 @@ public class CurationUtil {
         try{
             // Get Vision Service
             VisionUtil vision = new VisionUtil(VisionUtil.getVisionService());
-            labels = vision.getTags(file, vision);
+
+            Map<String, Object> labels = vision.getTags(file, vision);
             List<String> flags = vision.getFlags(file, vision);
-            if(!flags.isEmpty()){
+            if(!flags.isEmpty() && !flags.contains("racy")){
                 TelemetryManager.log("objectional content found for asset id [" + identifier +"] , flags = "+flags);
                 Map<String,Object> dMap = new HashMap<String,Object>(){{
                     put("identifier",identifier);
                     put("flags",flags);
+                    put("labels",labels);
                 }};
                 flagMapList.add(dMap);
             }
