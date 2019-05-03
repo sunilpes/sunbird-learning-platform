@@ -12,6 +12,7 @@ import redis.clients.jedis.Jedis;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -207,10 +208,10 @@ public class RedisStoreUtil {
 		try {
 			long start = System.currentTimeMillis();
 			String value = jedis.get(key);
-			System.out.println("Time taken fetch data from redis for : " + key + (System.currentTimeMillis() - start));
+			System.out.println("Time taken fetch data from redis for : " + key + " : " + (System.currentTimeMillis() - start));
 			start = System.currentTimeMillis();
 			String uncompressedValue = uncompressString(value);
-			System.out.println("Time taken uncompress data for : " + key + (System.currentTimeMillis() - start));
+			System.out.println("Time taken uncompress data for : " + key + " : " + (System.currentTimeMillis() - start));
 			return uncompressedValue;
 		} catch (Exception e) {
 			throw new ServerException(GraphCacheErrorCodes.ERR_CACHE_GET_PROPERTY_ERROR.name(), e.getMessage());
@@ -219,26 +220,65 @@ public class RedisStoreUtil {
 		}
 	}
 
-	public static String compressString(String srcTxt)
-			throws IOException {
-		ByteArrayOutputStream rstBao = new ByteArrayOutputStream();
-		GZIPOutputStream zos = new GZIPOutputStream(rstBao);
-		zos.write(srcTxt.getBytes());
-		IOUtils.closeQuietly(zos);
-		byte[] bytes = rstBao.toByteArray();
-		return Base64.encodeBase64String(bytes);
+	public static String compressString(String srcTxt) throws IOException {
+		ByteArrayOutputStream baos = null;
+		GZIPOutputStream gzos = null;
+		try {
+			byte[] bytes = srcTxt.getBytes();
+			baos = new ByteArrayOutputStream();
+			gzos = new GZIPOutputStream(baos);
+			gzos.write(bytes, 0, bytes.length);
+			gzos.finish();
+			gzos.close();
+			byte[] compressedByteArray = baos.toByteArray();
+			baos.close();
+			return Base64.encodeBase64String(compressedByteArray);
+		} finally {
+			IOUtils.closeQuietly(gzos);
+			IOUtils.closeQuietly(baos);
+		}
+	}
+
+	private static boolean isCompressed(byte[] bytes)
+	{
+		if ((bytes == null) || (bytes.length < 2)) {
+			return false;
+		} else {
+			return ((bytes[0] == (byte) (GZIPInputStream.GZIP_MAGIC)) && (bytes[1] == (byte) (GZIPInputStream.GZIP_MAGIC >> 8)));
+		}
 	}
 
 	public static String uncompressString(String zippedBase64Str)
 			throws IOException {
 		String result = null;
-		byte[] bytes = Base64.decodeBase64(zippedBase64Str);
-		GZIPInputStream zi = null;
+		byte[] bytes;
+		if(Base64.isBase64(zippedBase64Str)) {
+			bytes = Base64.decodeBase64(zippedBase64Str);
+		}else {
+			bytes = zippedBase64Str.getBytes();
+		}
+
+		if(!isCompressed(bytes))
+			return zippedBase64Str;
+		ByteArrayInputStream bais = null;
+		GZIPInputStream gzis = null;
+		ByteArrayOutputStream baos = null;
 		try {
-			zi = new GZIPInputStream(new ByteArrayInputStream(bytes));
-			result = IOUtils.toString(zi, "UTF-8");
+			bais = new ByteArrayInputStream(bytes);
+			gzis = new GZIPInputStream(bais);
+			baos = new ByteArrayOutputStream();
+
+			IOUtils.copy(gzis, baos);
+			gzis.close();
+			bais.close();
+			byte[] resBytes = baos.toByteArray();
+			result = new String(resBytes, StandardCharsets.UTF_8);
+			//result = IOUtils.toString(zi, "UTF-8");
+
 		} finally {
-			IOUtils.closeQuietly(zi);
+			IOUtils.closeQuietly(gzis);
+			IOUtils.closeQuietly(bais);
+			IOUtils.closeQuietly(baos);
 		}
 		return result;
 	}
