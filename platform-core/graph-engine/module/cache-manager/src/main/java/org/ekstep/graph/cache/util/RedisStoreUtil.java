@@ -7,6 +7,8 @@ import org.ekstep.common.exception.ServerException;
 import org.ekstep.graph.cache.exception.GraphCacheErrorCodes;
 import org.ekstep.graph.dac.enums.GraphDACParams;
 import org.ekstep.telemetry.logger.TelemetryManager;
+import org.msgpack.MessagePack;
+import org.msgpack.template.Templates;
 import redis.clients.jedis.Jedis;
 
 import java.io.ByteArrayInputStream;
@@ -197,7 +199,7 @@ public class RedisStoreUtil {
 
 	public static void saveCompressedData(String identifier, Map<String, Object> data, int ttl) {
 		try {
-			save(identifier, compressString(mapper.writeValueAsString(data)), ttl);
+			save(identifier, compressData(mapper.writeValueAsString(data)), ttl);
 		} catch (Exception e) {
 			TelemetryManager.error("Error while saving hierarchy to Redis for Identifier : " + identifier + " | Error is : ", e);
 		}
@@ -210,7 +212,7 @@ public class RedisStoreUtil {
 			String value = jedis.get(key);
 			System.out.println("Time taken fetch data from redis for : " + key + " : " + (System.currentTimeMillis() - start));
 			start = System.currentTimeMillis();
-			String uncompressedValue = uncompressString(value);
+			String uncompressedValue = decompressData(value);
 			System.out.println("Time taken uncompress data for : " + key + " : " + (System.currentTimeMillis() - start));
 			return uncompressedValue;
 		} catch (Exception e) {
@@ -220,6 +222,25 @@ public class RedisStoreUtil {
 		}
 	}
 
+
+	private static String compressData(String data) throws IOException {
+		MessagePack msgpack = new MessagePack();
+		byte[] raw = msgpack.write(data);
+		return Base64.encodeBase64String(raw);
+	}
+
+	private static String decompressData(String compressedData) throws IOException {
+		byte[] bytes;
+		if(Base64.isBase64(compressedData)) {
+			bytes = Base64.decodeBase64(compressedData);
+		}
+		else {
+			bytes = compressedData.getBytes();
+		}
+		MessagePack msgpack = new MessagePack();
+		String data = msgpack.read(bytes, Templates.TString);
+		return data;
+	}
 	public static String compressString(String srcTxt) throws IOException {
 		ByteArrayOutputStream baos = null;
 		GZIPOutputStream gzos = null;
