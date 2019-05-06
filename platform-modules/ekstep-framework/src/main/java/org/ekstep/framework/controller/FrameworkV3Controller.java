@@ -1,9 +1,14 @@
 package org.ekstep.framework.controller;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import org.ekstep.common.Platform;
 import org.ekstep.common.controller.BaseController;
 import org.ekstep.common.dto.Request;
 import org.ekstep.common.dto.Response;
@@ -32,6 +37,13 @@ public class FrameworkV3Controller extends BaseController {
 
 	@Autowired
 	private IFrameworkManager frameworkManager;
+
+	//https://sunbirddev.blob.core.windows.net/sunbird-content-dev/framework/NCF.json
+
+	private static final String FR_BASE_URL = "https://" + Platform.config.getString("azure_storage_key") + ".blob.core.windows.net/" +
+			Platform.config.getString("azure_storage_container") + "/framework/";
+
+	private static final String JSON_SUFFIX = ".json";
 
 	/**
 	 * 
@@ -69,6 +81,12 @@ public class FrameworkV3Controller extends BaseController {
 		String apiId = "ekstep.learning.framework.read";
 		try {
 			List<String> returnCategories = (categories == null) ? Arrays.asList() : Arrays.asList(categories);
+			String url = FR_BASE_URL + frameworkId + JSON_SUFFIX;
+			if(isExistsInCloud(url)) {
+				TelemetryManager.info("Getting framework hierarchy from URL: " + url);
+				Response response = mapper.readValue(new URL(url), Response.class);
+				return getResponseEntity(response, apiId, null);
+			}
 			Response response = frameworkManager.readFramework(frameworkId, returnCategories);
 			return getResponseEntity(response, apiId, null);
 		} catch (Exception e) {
@@ -76,6 +94,19 @@ public class FrameworkV3Controller extends BaseController {
 					"Exception Occured while reading framework details (Read Framework API): " + e.getMessage(), e);
 			return getExceptionResponseEntity(e, apiId, null);
 		}
+	}
+
+	private boolean isExistsInCloud(String url) {
+		try {
+			HttpResponse<String> httpResponse = Unirest.head(url).asString();
+			if(200 == httpResponse.getStatus()){
+				return true;
+			}
+		} catch (UnirestException e) {
+			TelemetryManager.error(
+					"Error Occured while fetching framework details from cloudStore for : " + url, e);
+		}
+		return false;
 	}
 
 	/**

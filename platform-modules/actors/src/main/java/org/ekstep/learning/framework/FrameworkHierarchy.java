@@ -3,13 +3,6 @@
  */
 package org.ekstep.learning.framework;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -21,6 +14,7 @@ import org.ekstep.common.exception.ResourceNotFoundException;
 import org.ekstep.common.exception.ResponseCode;
 import org.ekstep.common.mgr.BaseManager;
 import org.ekstep.common.mgr.ConvertGraphNode;
+import org.ekstep.common.optimizr.FileUtils;
 import org.ekstep.graph.cache.util.RedisStoreUtil;
 import org.ekstep.graph.dac.enums.GraphDACParams;
 import org.ekstep.graph.dac.model.Node;
@@ -29,6 +23,16 @@ import org.ekstep.graph.engine.router.GraphEngineManagers;
 import org.ekstep.graph.model.cache.CategoryCache;
 import org.ekstep.graph.model.node.DefinitionDTO;
 import org.ekstep.learning.hierarchy.store.HierarchyStore;
+import org.ekstep.learning.util.CloudStore;
+import org.ekstep.telemetry.logger.TelemetryManager;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author pradyumna
@@ -53,6 +57,8 @@ public class FrameworkHierarchy extends BaseManager {
 	private int frameworkTtl = (Platform.config.hasPath("framework.cache.ttl"))
 			? Platform.config.getInt("framework.cache.ttl")
 			: 604800;
+
+	private static final String FR_CLOUD_UPLOAD_DIR = "framework";
 
 	/**
 	 * @param id
@@ -79,12 +85,17 @@ public class FrameworkHierarchy extends BaseManager {
 			}
 			hierarchyStore.saveOrUpdateHierarchy(node.getIdentifier(),frameworkDocument);
 			//saving the framework in the redis sever for publish.
-			RedisStoreUtil.saveCompressedData(node.getIdentifier(), frameworkDocument, frameworkTtl);
+			RedisStoreUtil.saveData(node.getIdentifier(), frameworkDocument, frameworkTtl);
+			Response response = OK();
+			response.put("framework", frameworkDocument);
+			uploadToCloud(response, id);
 
 		} else {
 			throw new ClientException(ResponseCode.CLIENT_ERROR.name(), "The object with given identifier is not a framework: " + id);
 		}
 	}
+
+
 
 	/**
 	 *
@@ -204,4 +215,17 @@ public class FrameworkHierarchy extends BaseManager {
 		});
 	}
 
+	private void uploadToCloud(Response response, String id) {
+		File file = new File("/tmp/" + id + ".json");
+		try {
+			mapper.writeValue(file, response);
+			String[] url = CloudStore.uploadFile(FR_CLOUD_UPLOAD_DIR, file, false);
+			TelemetryManager.info("Uploaded frameworkHierarchy for " + id + " to cloud store : " + url[1]);
+		} catch (Exception e) {
+			TelemetryManager.error("Error while uploading framework to cloud store for id: " + id, e);
+		} finally {
+			FileUtils.deleteFile(file);
+		}
+
+	}
 }

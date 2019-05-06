@@ -1,7 +1,6 @@
 
 package org.ekstep.framework.mgr.impl;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -11,23 +10,16 @@ import org.ekstep.common.dto.Response;
 import org.ekstep.common.exception.ClientException;
 import org.ekstep.common.exception.ResourceNotFoundException;
 import org.ekstep.common.exception.ResponseCode;
-import org.ekstep.common.mgr.ConvertGraphNode;
 import org.ekstep.framework.enums.FrameworkEnum;
 import org.ekstep.framework.mgr.IFrameworkManager;
 import org.ekstep.graph.cache.util.RedisStoreUtil;
 import org.ekstep.graph.dac.enums.GraphDACParams;
 import org.ekstep.graph.dac.model.Node;
-import org.ekstep.graph.dac.model.Relation;
-import org.ekstep.graph.model.node.DefinitionDTO;
-import org.ekstep.telemetry.logger.TelemetryManager;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * The Class <code>FrameworkManagerImpl</code> is the implementation of
@@ -88,7 +80,7 @@ public class FrameworkManagerImpl extends BaseFrameworkManager implements IFrame
 		Response response = new Response();
 		Map<String, Object> responseMap = new HashMap<String, Object>();
 		long start = System.currentTimeMillis();
-		String frameworkStr = RedisStoreUtil.getUncompressed(frameworkId);
+		String frameworkStr = RedisStoreUtil.get(frameworkId);
 		System.out.println("Time to fetch data from RedisStoreUtils for framework " + frameworkId + " is : " + (System.currentTimeMillis() - start));
 		Map<String, Object> framework = new HashMap<String, Object>();
 		if (StringUtils.isNotBlank(frameworkStr)) {
@@ -118,7 +110,7 @@ public class FrameworkManagerImpl extends BaseFrameworkManager implements IFrame
 
 		//saving data in redis
 		if (StringUtils.isBlank(frameworkStr))
-			RedisStoreUtil.saveCompressedData(frameworkId, framework, frameworkTtl);
+			RedisStoreUtil.saveData(frameworkId, framework, frameworkTtl);
 
 		return response;
 	}
