@@ -15,6 +15,7 @@ import org.ekstep.framework.mgr.IFrameworkManager;
 import org.ekstep.graph.cache.util.RedisStoreUtil;
 import org.ekstep.graph.dac.enums.GraphDACParams;
 import org.ekstep.graph.dac.model.Node;
+import org.ekstep.learning.util.FrameworkCache;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -79,12 +80,10 @@ public class FrameworkManagerImpl extends BaseFrameworkManager implements IFrame
 	public Response readFramework(String frameworkId, List<String> returnCategories) throws Exception {
 		Response response = new Response();
 		Map<String, Object> responseMap = new HashMap<String, Object>();
-		long start = System.currentTimeMillis();
-		String frameworkStr = RedisStoreUtil.get(frameworkId);
-		System.out.println("Time to fetch data from RedisStoreUtils for framework " + frameworkId + " is : " + (System.currentTimeMillis() - start));
-		Map<String, Object> framework = new HashMap<String, Object>();
-		if (StringUtils.isNotBlank(frameworkStr)) {
-			framework = mapper.readValue(frameworkStr, Map.class);
+		//String frameworkStr = RedisStoreUtil.get(frameworkId);
+		Map<String, Object> framework = (Map<String, Object>) FrameworkCache.get(frameworkId);
+		if (MapUtils.isEmpty(framework)) {
+			framework = new HashMap<>();
 		} else { // if not available in redis
 			Response getHierarchyResp = getFrameworkHierarchy(frameworkId);
 			framework = (Map<String, Object>) getHierarchyResp.get("framework");
@@ -92,14 +91,12 @@ public class FrameworkManagerImpl extends BaseFrameworkManager implements IFrame
 
 		if (MapUtils.isNotEmpty(framework)) {
 			// filtering based on requested categories.
-			start = System.currentTimeMillis();
 			filterFrameworkCategories(framework, returnCategories);
-			System.out.println("Time to filter categories from Redis for framework " + frameworkId + " is : " + (System.currentTimeMillis() - start));
 			responseMap.putAll(framework);
 			response.put(FrameworkEnum.framework.name(), responseMap);
 			response.setParams(getSucessStatus());
 		} else {
-			if (StringUtils.isBlank(frameworkStr)) {
+			if (MapUtils.isEmpty(framework)) {
 				response = read(frameworkId, FRAMEWORK_OBJECT_TYPE, FrameworkEnum.framework.name());
 				framework = (Map<String, Object>) response.getResult().get("framework");
 			} else {
@@ -108,9 +105,10 @@ public class FrameworkManagerImpl extends BaseFrameworkManager implements IFrame
 			}
 		}
 
-		//saving data in redis
-		if (StringUtils.isBlank(frameworkStr))
-			RedisStoreUtil.saveData(frameworkId, framework, frameworkTtl);
+		//saving data in cache
+		if (MapUtils.isNotEmpty(framework))
+			FrameworkCache.save(frameworkId, framework);
+			//RedisStoreUtil.saveData(frameworkId, framework, frameworkTtl);
 
 		return response;
 	}

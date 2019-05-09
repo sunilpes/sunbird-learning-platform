@@ -24,6 +24,7 @@ import org.ekstep.graph.model.cache.CategoryCache;
 import org.ekstep.graph.model.node.DefinitionDTO;
 import org.ekstep.learning.hierarchy.store.HierarchyStore;
 import org.ekstep.learning.util.CloudStore;
+import org.ekstep.learning.util.FrameworkCache;
 import org.ekstep.telemetry.logger.TelemetryManager;
 
 import java.io.File;
@@ -85,10 +86,11 @@ public class FrameworkHierarchy extends BaseManager {
 			}
 			hierarchyStore.saveOrUpdateHierarchy(node.getIdentifier(),frameworkDocument);
 			//saving the framework in the redis sever for publish.
-			RedisStoreUtil.saveData(node.getIdentifier(), frameworkDocument, frameworkTtl);
-			Response response = OK();
-			response.put("framework", frameworkDocument);
-			uploadToCloud(response, id);
+			FrameworkCache.save(node.getIdentifier(), frameworkDocument);
+//			RedisStoreUtil.saveData(node.getIdentifier(), frameworkDocument, frameworkTtl);
+//			Response response = OK();
+//			response.put("framework", frameworkDocument);
+//			uploadToCloud(response, id);
 
 		} else {
 			throw new ClientException(ResponseCode.CLIENT_ERROR.name(), "The object with given identifier is not a framework: " + id);
