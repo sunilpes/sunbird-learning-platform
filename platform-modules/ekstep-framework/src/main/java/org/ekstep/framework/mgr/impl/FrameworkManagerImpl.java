@@ -80,7 +80,6 @@ public class FrameworkManagerImpl extends BaseFrameworkManager implements IFrame
 	public Response readFramework(String frameworkId, List<String> returnCategories) throws Exception {
 		Response response = new Response();
 		Map<String, Object> responseMap = new HashMap<String, Object>();
-		//String frameworkStr = RedisStoreUtil.get(frameworkId);
 		Map<String, Object> framework = (Map<String, Object>) FrameworkCache.get(frameworkId);
 		if (MapUtils.isEmpty(framework)) {
 			framework = new HashMap<>();
@@ -108,7 +107,6 @@ public class FrameworkManagerImpl extends BaseFrameworkManager implements IFrame
 		//saving data in cache
 		if (MapUtils.isNotEmpty(framework))
 			FrameworkCache.save(frameworkId, framework);
-			//RedisStoreUtil.saveData(frameworkId, framework, frameworkTtl);
 
 		return response;
 	}
