@@ -14,11 +14,11 @@ public class FrameworkCache {
 
     public static void save(String frameworkId, Object hierarchy) {
         frameworkCache.put(frameworkId, hierarchy);
-        TelemetryManager.log("Saved framework hierarchy for : " + frameworkId);
+        TelemetryManager.info("Saved framework hierarchy to local cache for : " + frameworkId);
     }
 
     public static Object get(String frameworkId) {
-        TelemetryManager.log("Fetching framework from cache for : " + frameworkId);
+        TelemetryManager.info("Fetching framework from local cache for : " + frameworkId);
         return frameworkCache.get(frameworkId);
     }
 }
