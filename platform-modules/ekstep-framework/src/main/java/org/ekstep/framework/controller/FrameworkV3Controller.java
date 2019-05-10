@@ -81,12 +81,6 @@ public class FrameworkV3Controller extends BaseController {
 		String apiId = "ekstep.learning.framework.read";
 		try {
 			List<String> returnCategories = (categories == null) ? Arrays.asList() : Arrays.asList(categories);
-			String url = FR_BASE_URL + frameworkId + JSON_SUFFIX;
-			if(isExistsInCloud(url)) {
-				TelemetryManager.info("Getting framework hierarchy from URL: " + url);
-				Response response = mapper.readValue(new URL(url), Response.class);
-				return getResponseEntity(response, apiId, null);
-			}
 			Response response = frameworkManager.readFramework(frameworkId, returnCategories);
 			return getResponseEntity(response, apiId, null);
 		} catch (Exception e) {
