@@ -98,16 +98,13 @@ public class FrameworkManagerImpl extends BaseFrameworkManager implements IFrame
 			if (MapUtils.isEmpty(framework)) {
 				response = read(frameworkId, FRAMEWORK_OBJECT_TYPE, FrameworkEnum.framework.name());
 				framework = (Map<String, Object>) response.getResult().get("framework");
+				if (MapUtils.isNotEmpty(framework))
+					FrameworkCache.save(frameworkId, framework);
 			} else {
 				response = OK();
 				response.put(FrameworkEnum.framework.name(), framework);
 			}
 		}
-
-		//saving data in cache
-		if (MapUtils.isNotEmpty(framework))
-			FrameworkCache.save(frameworkId, framework);
-
 		return response;
 	}
 
