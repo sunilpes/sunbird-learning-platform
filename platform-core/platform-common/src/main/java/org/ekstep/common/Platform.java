@@ -16,9 +16,19 @@ import com.typesafe.config.ConfigFactory;
  */
 
 public class Platform {
-	private static Config defaultConf = ConfigFactory.load();
-	private static Config envConf = ConfigFactory.systemEnvironment();
-	public static Config config = defaultConf.withFallback(envConf);
+	
+	public static Config config = null;
+
+	static {
+		try {
+			Config defaultConf = ConfigFactory.load();
+			Config envConf = ConfigFactory.systemEnvironment();
+			config = defaultConf.withFallback(envConf);
+		} catch (Exception e) {
+			System.out.println("Error while initializing Platform: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
 
 	private static int requestTimeout = 30;
 	private static Map<String, List<String>> graphIds = new HashMap<>();
